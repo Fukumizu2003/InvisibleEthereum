@@ -1,0 +1,7 @@
+{
+    "deposit(uint256[2],uint256[2][2],uint256[2],uint256[3],uint128[7])": "encrypted transaction",
+    "withdraw(uint256[2],uint256[2][2],uint256[2],uint256[3],address,uint128[7])": "receiver, encrypted transaction",
+    "withdrawAll(uint256[2],uint256[2][2],uint256[2],uint256[3],uint128[7])": "receiver",
+    "transfer(uint256[2],uint256[2][2],uint256[2],uint256[4],uint128[7])": "encrypted transaction",
+    "transferAll(uint256[2],uint256[2][2],uint256[2],uint256[3],uint128[7])": "encrypted transaction"
+}
