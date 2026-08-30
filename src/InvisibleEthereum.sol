@@ -25,6 +25,7 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
     mapping (uint256 => bool) public merkleRootHistory;
     mapping (uint256 => bool) public nullifiers;
 
+    // Verifier addresses will be altered in the future.
     DepositVerifier depositVerifier = DepositVerifier(0xd17404c5354C55F0215cCc0c81902F997Dd574BB);
     TransferVerifier transferVerifier = TransferVerifier(0xB43c4F9102a45cA875D2Bc5CfFF26391f198EfCd);
     TransferAllVerifier transferAllVerifier = TransferAllVerifier(0x2F3aB91717e4D39288D4c935a36EfEB944B1153b);
