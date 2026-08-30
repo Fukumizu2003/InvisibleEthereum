@@ -22,6 +22,7 @@ Block Height の宣言は、対象ブロックの生成および Block Hash の�
 
 * 本書公開時点の Ethereum Mainnet Block Height: **25,870,000 未満**
 * Beacon に使用する Block Height: **25,880,000**
+* Beacon hash iterations: 2^10
 
 対象ブロックが生成された後、その Block Hash を Beacon 値として使用し、最終的な zkey を生成する。
 このBeacon値の適用範囲は以下のとおりである。
