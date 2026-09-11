@@ -20,30 +20,14 @@ Block Height の宣言は、対象ブロックの生成および Block Hash の�
 
 ## 宣言
 
-* 本書公開時点の Ethereum Mainnet Block Height: **25,870,000 未満**
-* Beacon に使用する Block Height: **25,880,000**
-* Beacon hash iterations: 2^10
+* 本書公開時点の Ethereum Mainnet Block Height: **25,960,000 未満**
+* Beacon に使用する Block Height: **25,980,000**
+* Beacon hash iterations: 2^15
 
 対象ブロックが生成された後、その Block Hash を Beacon 値として使用し、最終的な zkey を生成する。
 このBeacon値の適用範囲は以下のとおりである。
 * out/deposit_1.zkey
 * out/transfer_1.zkey
-* out/transferAll_1.zkey
 * out/withdraw_1.zkey
-* out/withdrawAll_1.zkey
 
 対象ブロックの Block Height および Block Hash、Beacon の実行結果、生成された最終 zkey の検証結果は、Beacon 実施後に本書へ追記する。
-
-## 追記 (2026/9/1)
-以下の通りBeaconを実施した。
-* Block number: 25,880,000
-* Block hash: 64b665414720230df4845b01ff7b9a5c7a5c5ad89ef398eb82ecb8e8138a82a8
-* Beacon hash iterations: 2^10
-* 実行コマンド: snarkjs zkey beacon out/deposit_1.zkey out/deposit.zkey 64b665414720230df4845b01ff7b9a5c7a5c5ad89ef398eb82ecb8e8138a82a8 10 -n="Final beacon phase2" (ほかの対象適用範囲zkeyファイルに関しても同様)
-* 検証コマンド:
-  1. snarkjs zkey verify out/deposit.r1cs ptau/powersOfTau28_hez_final_11.ptau out/deposit.zkey
-  1. snarkjs zkey verify out/transfer.r1cs ptau/powersOfTau28_hez_final_15.ptau out/transfer.zkey
-  1. snarkjs zkey verify out/transferAll.r1cs ptau/powersOfTau28_hez_final_15.ptau out/transferAll.zkey
-  1. snarkjs zkey verify out/withdraw.r1cs ptau/powersOfTau28_hez_final_15.ptau out/withdraw.zkey
-  1. snarkjs zkey verify out/withdrawAll.r1cs ptau/powersOfTau28_hez_final_15.ptau out/withdrawAll.zkey
-  

@@ -1,0 +1,2 @@
+zk_snark/out/** filter=lfs diff=lfs merge=lfs -text
+zk_snark/ptau/** filter=lfs diff=lfs merge=lfs -text

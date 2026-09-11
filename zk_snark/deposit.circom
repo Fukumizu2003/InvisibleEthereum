@@ -2,7 +2,7 @@ pragma circom 2.0.0;
 
 include "./common.circom";
 
-template VerifyHash() {
+template Verify() {
     signal input token;
     signal input amount;
     signal input to;
@@ -19,4 +19,4 @@ template VerifyHash() {
     commitment <== cm.commitment;
 }
 
-component main {public [token, amount]} = VerifyHash();
+component main {public [token, amount]} = Verify();

@@ -12,8 +12,10 @@ template RorL() {
     signal input bit;
     signal input hash;
     signal input sibling;
+
     signal output right;
     signal output left;
+
     signal hashwhen0;
     signal siblingwhen0;
     signal hashwhen1;
@@ -41,6 +43,7 @@ template Zaddress() {
     zaddress <== hasher.out;
 }
 
+// Commitment = 0 when amount = 0.
 template Commitment() {
     signal input token;
     signal input amount;
@@ -61,7 +64,10 @@ template Commitment() {
     hasher.inputs[2] <== to;
     hasher.inputs[3] <== tag;
     
-    commitment <== hasher.out;
+    component iszero = IsZero();
+    iszero.in <== amount;
+
+    commitment <== hasher.out * (1 - iszero.out);
 }
 
 template Nullifykey() {
@@ -88,10 +94,13 @@ template Nullifier() {
     hasher.inputs[0] <== commitment;
     hasher.inputs[1] <== nullifykey;
 
-    nullifier <== hasher.out;
+    component iszero = IsZero();
+    iszero.in <== commitment;
+
+    nullifier <== hasher.out * (1 - iszero.out);
 }
 
-template Merklepath() {
+template MerklepathOne() {
     signal input commitment;
     signal input merklepath[32];
     signal input pathbits[32];
@@ -113,5 +122,36 @@ template Merklepath() {
         pathHasher[i].inputs[1] <== rl[i].right;
         hashbuf[i+1] <== pathHasher[i].out;
     }
-    root <== hashbuf[32];
+    
+    component iszero = IsZero();
+    iszero.in <== commitment;
+
+    root <== hashbuf[32] * (1 - iszero.out);
+}
+
+template Merklepath() {
+    signal input commitment[10];
+    signal input merklepath[320];
+    signal input pathbits[320];
+
+    signal output root;
+
+    component mp[10];
+    mp[0] = MerklepathOne();
+    mp[0].commitment <== commitment[0];
+    for (var i = 0; i < 32; i++) {
+        mp[0].merklepath[i] <== merklepath[i];
+        mp[0].pathbits[i] <== pathbits[i];
+    }
+    root <== mp[0].root;
+
+    for (var h = 1; h < 10; h++) {
+        mp[h] = MerklepathOne();
+        mp[h].commitment <== commitment[h];
+        for (var i = 0; i < 32; i++) {
+            mp[h].merklepath[i] <== merklepath[h*32 + i];
+            mp[h].pathbits[i] <== pathbits[h*32 + i];
+        }
+        (root - mp[h].root) * mp[h].root === 0;
+    }
 }

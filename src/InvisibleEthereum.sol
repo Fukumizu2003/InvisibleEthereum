@@ -8,9 +8,7 @@ import "node_modules/@zk-kit/incremental-merkle-tree.sol/IncrementalBinaryTree.s
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./DepositVerifier.sol";
 import "./TransferVerifier.sol";
-import "./TransferAllVerifier.sol";
 import "./WithdrawVerifier.sol";
-import "./WithdrawAllVerifier.sol";
 
 contract InvisibleEthereum is Ownable, ReentrancyGuard {
 
@@ -28,9 +26,7 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
     // Verifier addresses will be altered in the future.
     DepositVerifier depositVerifier = DepositVerifier(0xd17404c5354C55F0215cCc0c81902F997Dd574BB);
     TransferVerifier transferVerifier = TransferVerifier(0xB43c4F9102a45cA875D2Bc5CfFF26391f198EfCd);
-    TransferAllVerifier transferAllVerifier = TransferAllVerifier(0x2F3aB91717e4D39288D4c935a36EfEB944B1153b);
     WithdrawVerifier withdrawVerifier = WithdrawVerifier(0xef4f9639457f282edD4FE214d3DC3ff4A8E27DBA);
-    WithdrawAllVerifier withdrawAllVerifier = WithdrawAllVerifier(0x6Cd5eC2c6436a96B71dd4385aFdFF75fD8e48747);
 
     uint256 public constant fixedFee = 0.00005 ether;
     uint256 public constant upperLimit = 0x1000000000000000000000000000000000000000000000000000000000000000;
@@ -89,22 +85,20 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
 
         _addNewCommitment(commitment);
         emit NewCommitment(totalCommitments - 1, commitment, transaction);
-        _addRootHistory();
-
     }
 
     /*
         _pubSignals[0]: root
-        _pubSignals[1]: nullifier
-        _pubSignals[2]: change_commitment
-        _pubSignals[3]: token_contract_address
-        _pubSignals[4]: withdrawal_amount
+        _pubSignals[1~10]: nullifier
+        _pubSignals[11]: change_commitment
+        _pubSignals[12]: token_contract_address
+        _pubSignals[13]: withdrawal_amount
     */
     function withdraw(
         uint[2] calldata _pA,
         uint[2][2] calldata _pB,
         uint[2] calldata _pC,
-        uint[5] calldata _pubSignals,
+        uint[14] calldata _pubSignals,
         address payable receiver,
         uint256[5] calldata transaction
     ) public payable nonReentrant {
@@ -114,7 +108,6 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
         require(valid, "Groth16 verification failed.");
 
         uint256 proofRoot = _pubSignals[0];
-        uint256 nullifier = _pubSignals[1];
         uint256 changeCommitment = _pubSignals[2];
         address token = address(uint160(_pubSignals[3]));
         uint256 amount = _pubSignals[4];
@@ -144,75 +137,29 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
             _imposeERC20Fee(token, amount/1000);
         }
 
-        _addNullifier(nullifier);
-
-        _addNewCommitment(changeCommitment);
-        emit NewCommitment(totalCommitments - 1, changeCommitment, transaction);
-        _addRootHistory();
-    }
-
-    /*
-        _pubSignals[0]: root
-        _pubSignals[1]: nullifier
-        _pubSignals[2]: token_contract_address
-        _pubSignals[3]: withdrawal_amount
-    */
-    function withdrawAll(
-        uint[2] calldata _pA,
-        uint[2][2] calldata _pB,
-        uint[2] calldata _pC,
-        uint[4] calldata _pubSignals,
-        address payable receiver
-    ) public payable nonReentrant {
-        _checkFormat(_pubSignals[2], _pubSignals[3]);
-
-        bool valid = withdrawAllVerifier.verifyProof(_pA, _pB, _pC, _pubSignals);
-        require(valid, "Groth16 verification failed.");
-
-        uint256 proofRoot = _pubSignals[0];
-        uint256 nullifier = _pubSignals[1];
-        address token = address(uint160(_pubSignals[2]));
-        uint256 amount = _pubSignals[3];
-
-        require(amount > fixedFee, "Commitment less than 0.00005 ETH cannot be withdrawn.");
-        require(_isValidRoot(proofRoot), "Merkle root did not match.");
-        require(!nullifiers[nullifier], "Commitment is already consumed.");
-
-        uint256 fee = fixedFee;
-
-        if (token == address(0)) {
-            fee += amount/1000;
-            (bool success, ) = receiver.call{value: amount - fee}("");
-            require(success, "ETH withdraw failed.");
-            
-            _imposeNativeFee(fee);
-        } else {
-            require(msg.value >= fee, "ERC20 withdraw fee 0.00005 ETH is required.");
-            if (msg.value > fee) {
-                (bool success, ) = payable(msg.sender).call{value: msg.value - fee}("");
-                require(success, "Change ETH refund failed.");
+        for (uint i = 1; i <= 10; i++) {
+            if (_pubSignals[i] != 0) {
+                _addNullifier(_pubSignals[i]);
             }
-
-            IERC20(token).safeTransfer(receiver, amount - amount/1000);
-            
-            _imposeNativeFee(fee);
-            _imposeERC20Fee(token, amount/1000);
         }
 
-        _addNullifier(nullifier);
+        if (changeCommitment != 0) {
+            _addNewCommitment(changeCommitment);
+            emit NewCommitment(totalCommitments - 1, changeCommitment, transaction);
+        }
     }
 
     /*
         _pubSignals[0]: root
         _pubSignals[1]: new_commitment
         _pubSignals[2]: change_commitment
-        _pubSignals[3]: nullifier
+        _pubSignals[3~12]: nullifier
     */
     function transfer(
         uint[2] calldata _pA,
         uint[2][2] calldata _pB,
         uint[2] calldata _pC,
-        uint[4] calldata _pubSignals,
+        uint[13] calldata _pubSignals,
         uint256[5] calldata newTransaction,
         uint256[5] calldata changeTransaction
     ) public payable {
@@ -227,58 +174,23 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
         uint256 proofRoot = _pubSignals[0];
         uint256 newCommitment = _pubSignals[1];
         uint256 changeCommitment = _pubSignals[2];
-        uint256 nullifier = _pubSignals[3];
 
         require(_isValidRoot(proofRoot), "Merkle root did not match.");
         require(!nullifiers[nullifier], "Commitment is already consumed.");
 
-        _addNewCommitment(changeCommitment);
-        emit NewCommitment(totalCommitments - 1, changeCommitment, changeTransaction);
-        _addRootHistory();
+        if (changeCommitment != 0) {
+            _addNewCommitment(changeCommitment);
+            emit NewCommitment(totalCommitments - 1, changeCommitment, changeTransaction);
+        }
 
         _addNewCommitment(newCommitment);
         emit NewCommitment(totalCommitments - 1, newCommitment, newTransaction);
-        _addRootHistory();
 
         _imposeNativeFee(fixedFee);
 
-        _addNullifier(nullifier);
-    }
-
-    /*
-        _pubSignals[0]: root
-        _pubSignals[1]: new_commitment
-        _pubSignals[2]: nullifier
-    */
-    function transferAll(
-        uint[2] calldata _pA,
-        uint[2][2] calldata _pB,
-        uint[2] calldata _pC,
-        uint[3] calldata _pubSignals,
-        uint256[5] calldata transaction
-    ) public payable {
-        require(msg.value >= fixedFee, "Transfer fee 0.00005 ETH is required.");
-        if (msg.value > fixedFee) {
-            (bool success, ) = payable(msg.sender).call{value: msg.value - fixedFee}("");
-            require(success, "Change ETH refund failed.");
+        for (uint i = 3; i <= 12; i++) {
+            _addNullifier(_pubSignals[i]);
         }
-        bool valid = transferAllVerifier.verifyProof(_pA, _pB, _pC, _pubSignals);
-        require(valid, "Groth16 verification failed.");
-
-        uint256 proofRoot = _pubSignals[0];
-        uint256 newCommitment = _pubSignals[1];
-        uint256 nullifier = _pubSignals[2];
-
-        require(_isValidRoot(proofRoot), "Merkle root did not match.");
-        require(!nullifiers[nullifier], "Commitment is already consumed.");
-
-        _addNewCommitment(newCommitment);
-        emit NewCommitment(totalCommitments - 1, newCommitment, transaction);
-        _addRootHistory();
-
-        _imposeNativeFee(fixedFee);
-        
-        _addNullifier(nullifier);
     }
 
     function getTotalCommitments() public view returns(uint256) {
@@ -290,17 +202,17 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
     }
 
     function _addNewCommitment(uint256 commitment) private {
-        merkleTree.insert(commitment);
-        totalCommitments++;
+        if (commitment != 0) {
+            merkleTree.insert(commitment);
+            totalCommitments++;
+            merkleRootHistory[merkleTree.root] = true;
+        }
     }
 
     function _addNullifier(uint256 nullifier) private {
-        nullifiers[nullifier] = true;
-    }
-
-    // Must be called after _addNewCommitment().
-    function _addRootHistory() private {
-        merkleRootHistory[merkleTree.root] = true;
+        if (nullifier != 0) {
+            nullifiers[nullifier] = true;
+        }
     }
 
     function _imposeNativeFee(uint256 fee) private {

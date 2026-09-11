@@ -31,16 +31,12 @@ InvisibleEthereumは、EVMチェーン上でのネイティブトークン（ETH
 │   ├── InvisibleEthereum.sol     # メインコントラクト
 │   ├── DepositVerifier.sol       # Deposit用証明検証
 │   ├── TransferVerifier.sol      # Transfer用証明検証
-│   ├── TransferAllVerifier.sol   # TransferAll用証明検証
-│   ├── WithdrawVerifier.sol      # Withdraw用証明検証
-│   └── WithdrawAllVerifier.sol   # WithdrawAll用証明検証
+│   └── WithdrawVerifier.sol      # Withdraw用証明検証
 ├── zk_snark/                     # zk-SNARK回路
 │   ├── common.circom             # 共通テンプレート
 │   ├── deposit.circom            # Deposit回路
 │   ├── transfer.circom           # Transfer回路
-│   ├── transferAll.circom        # TransferAll回路
-│   ├── withdraw.circom           # Withdraw回路
-│   └── withdrawAll.circom        # WithdrawAll回路
+│   └── withdraw.circom           # Withdraw回路
 ├── docs/                         # ドキュメント
 ├── lib/                          # 外部ライブラリ
 └── foundry.toml                  # Foundry設定
