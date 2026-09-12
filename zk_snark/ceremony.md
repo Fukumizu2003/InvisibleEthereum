@@ -19,7 +19,7 @@ Beacon に使用する値が Contribution の時点で予測不可能であっ�
 Block Height の宣言は、対象ブロックの生成および Block Hash の確定より前に本書を GitHub 上で公開することによって行う。
 
 ## 宣言
-* 本書執筆時点の時刻: 2026/09/11 18:35
+* 本書執筆時点の時刻: 2026/09/12 15:35
 * 本書公開時点の Ethereum Mainnet Block Height: **25,960,000 未満**
 * Beacon に使用する Block Height: **25,980,000**
 * Beacon hash iterations: 2^15

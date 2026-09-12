@@ -102,19 +102,21 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
         address payable receiver,
         uint256[5] calldata transaction
     ) public payable nonReentrant {
-        _checkFormat(_pubSignals[3], _pubSignals[4]);
+        _checkFormat(_pubSignals[12], _pubSignals[13]);
 
         bool valid = withdrawVerifier.verifyProof(_pA, _pB, _pC, _pubSignals);
         require(valid, "Groth16 verification failed.");
 
         uint256 proofRoot = _pubSignals[0];
-        uint256 changeCommitment = _pubSignals[2];
-        address token = address(uint160(_pubSignals[3]));
-        uint256 amount = _pubSignals[4];
+        uint256 changeCommitment = _pubSignals[11];
+        address token = address(uint160(_pubSignals[12]));
+        uint256 amount = _pubSignals[13];
 
         require(amount > fixedFee, "Commitment less than 0.00005 ETH cannot be withdrawn.");
         require(_isValidRoot(proofRoot), "Merkle root did not match.");
-        require(!nullifiers[nullifier], "Commitment is already consumed.");
+        for (uint i = 1; i <= 10; i++) {
+            require(!nullifiers[_pubSignals[i]], "Commitment is already consumed.");
+        }
 
         uint256 fee = fixedFee;
 
@@ -176,7 +178,9 @@ contract InvisibleEthereum is Ownable, ReentrancyGuard {
         uint256 changeCommitment = _pubSignals[2];
 
         require(_isValidRoot(proofRoot), "Merkle root did not match.");
-        require(!nullifiers[nullifier], "Commitment is already consumed.");
+        for (uint i = 3; i <= 12; i++) {
+            require(!nullifiers[_pubSignals[i]], "Commitment is already consumed.");
+        }
 
         if (changeCommitment != 0) {
             _addNewCommitment(changeCommitment);
